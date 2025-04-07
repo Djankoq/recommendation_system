@@ -2,6 +2,7 @@ import json
 
 
 class User:
+    FILE_PATH = "./users.json"
 
     def __init__(self, id, name, likes, dislikes):
         self.id = id
@@ -23,7 +24,7 @@ class User:
         """Считывает пользователей из файла и возвращает список объектов User"""
         users = []
         try:
-            with open("./users.json", "r", encoding="utf-8") as f:
+            with open(User.FILE_PATH, "r", encoding="utf-8") as f:  # Используем динамический путь
                 content = f.read()
                 temp = json.loads(content) if content else []
             for item in temp:
@@ -33,12 +34,13 @@ class User:
             return []
         return users
 
+
     @staticmethod
     def add_user(user):
         """Добавляет нового пользователя в файл users.json"""
         users = User.read_file()
         users.append(user)
-        with open("../users.json", "w", encoding="utf-8") as f:
+        with open(User.FILE_PATH, "w", encoding="utf-8") as f:  # Используем динамический путь к файлу
             json.dump([u.to_dict() for u in users], f, indent=4, ensure_ascii=False)
 
     @staticmethod
@@ -55,6 +57,7 @@ class User:
         for user in users:
             if user.id == id:
                 return user
+        raise ValueError(f"Пользователь с id {id} не найден")
 
     def __str__(self):
         return f"{self.id}  {self.name} {self.likes} {self.dislikes}"
