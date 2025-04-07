@@ -3,6 +3,8 @@ from user.user import User
 
 
 class Position:
+    FILE_PATH = "./positions.json"  # Путь к файлу по умолчанию
+
     def __init__(self, id, name, tags):
         self.id = id
         self.name = name
@@ -13,7 +15,7 @@ class Position:
         """Считывает позиции из файла и возвращает список объектов Position"""
         positions = []
         try:
-            with open('./positions.json', 'r', encoding='utf-8') as f:
+            with open(Position.FILE_PATH, 'r', encoding='utf-8') as f:  # Используем динамический путь
                 content = f.read()
                 temp = json.loads(content) if content else []
             for item in temp:
@@ -28,7 +30,7 @@ class Position:
 
     @staticmethod
     def get_position_by_id(id):
-        """Возращает позицию по id"""
+        """Возвращает позицию по id"""
         positions = Position.read_file()
         for position in positions:
             if position.id == id:
@@ -53,5 +55,7 @@ class Position:
                     recommend_positions.append(position)
 
             return recommend_positions
+        except AttributeError:
+            return "Пользователь не найден"
         except TypeError:
             return "Пользователь не найден"
