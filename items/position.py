@@ -1,21 +1,20 @@
 import json
 from user.user import User
 
-
 class Position:
-    FILE_PATH = "./positions.json"  # Путь к файлу по умолчанию
+    __FILE_PATH = "./positions.json" # Путь к файлу по умолчанию
 
     def __init__(self, id, name, tags):
-        self.id = id
-        self.name = name
-        self.tags = tags
+        self.__id = id
+        self.__name = name
+        self.__tags = tags
 
     @staticmethod
-    def read_file():
+    def __read_file():
         """Считывает позиции из файла и возвращает список объектов Position"""
         positions = []
         try:
-            with open(Position.FILE_PATH, 'r', encoding='utf-8') as f:  # Используем динамический путь
+            with open(Position.__FILE_PATH, 'r', encoding='utf-8') as f:
                 content = f.read()
                 temp = json.loads(content) if content else []
             for item in temp:
@@ -26,27 +25,27 @@ class Position:
         return positions
 
     def __str__(self):
-        return f"{self.id}  {self.name} {self.tags}"
+        return f"{self.__id}  {self.__name} {self.__tags}"
 
     @staticmethod
     def get_position_by_id(id):
         """Возвращает позицию по id"""
-        positions = Position.read_file()
+        positions = Position.__read_file()
         for position in positions:
-            if position.id == id:
+            if position.__id == id:
                 return position
         return "Позиция не найдена"
 
     @staticmethod
     def get_recommend_position(user_id):
         try:
-            likes = User.get_user_by_id(user_id).likes
-            dislikes = User.get_user_by_id(user_id).dislikes
-            positions = Position.read_file()
+            likes = User.get_user_by_id(user_id)._User__likes
+            dislikes = User.get_user_by_id(user_id)._User__dislikes
+            positions = Position.__read_file()
             recommend_positions = []
             for position in positions:
                 in_dislikes = False
-                for tag in position.tags:
+                for tag in position.__tags:
                     if tag in dislikes:
                         in_dislikes = True
                         break
