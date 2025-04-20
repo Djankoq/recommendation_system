@@ -1,8 +1,9 @@
 import json
 from user.user import User
 
+
 class Position:
-    __FILE_PATH = "./positions.json" # Путь к файлу по умолчанию
+    __FILE_PATH = "./positions.json"  # Путь к файлу по умолчанию
 
     def __init__(self, id, name, tags):
         self.__id = id
@@ -41,16 +42,22 @@ class Position:
         try:
             likes = User.get_user_by_id(user_id)._User__likes
             dislikes = User.get_user_by_id(user_id)._User__dislikes
+            viewed = User.get_user_by_id(user_id)._User__viewed
             positions = Position.__read_file()
             recommend_positions = []
             for position in positions:
                 in_dislikes = False
+                in_viewed = False
+
+                if position.__id in viewed:
+                    in_viewed = True
+
                 for tag in position.__tags:
                     if tag in dislikes:
                         in_dislikes = True
                         break
 
-                if not in_dislikes and tag in likes:
+                if not in_dislikes and not in_viewed and tag in likes:
                     recommend_positions.append(position)
 
             return recommend_positions

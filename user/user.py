@@ -1,13 +1,15 @@
 import json
 
+
 class User:
     __FILE_PATH = "./users.json"  # Приватный атрибут для хранения пути к файлу
 
-    def __init__(self, id, name, likes, dislikes):
+    def __init__(self, id, name, likes, dislikes, viewed):
         self.__id = id  # Приватные атрибуты экземпляра
         self.__name = name
         self.__likes = likes
         self.__dislikes = dislikes
+        self.__viewed = viewed
 
     def __to_dict(self):
         """Конвертирует объект User в словарь для сериализации в JSON"""
@@ -16,6 +18,7 @@ class User:
             "name": self.__name,
             "like_categories": self.__likes,
             "dislike_categories": self.__dislikes,
+            "viewed": self.__viewed
         }
 
     @staticmethod
@@ -27,7 +30,8 @@ class User:
                 content = f.read()
                 temp = json.loads(content) if content else []
             for item in temp:
-                user = User(item["id"], item["name"], item["like_categories"], item["dislike_categories"])
+                user = User(item["id"], item["name"], item["like_categories"], item["dislike_categories"],
+                            item["viewed"])
                 users.append(user)
         except FileNotFoundError:
             return []
@@ -44,8 +48,8 @@ class User:
     @staticmethod
     def get_uniq_id():
         """Ищет уникальный id"""
-        users = User.read_file()
-        existing_ids = {user.id for user in users}
+        users = User.__read_file()
+        existing_ids = {user.__id for user in users}
         new_id = 1
         while new_id in existing_ids:
             new_id += 1
@@ -61,4 +65,4 @@ class User:
         raise ValueError(f"Пользователь с id {id} не найден")
 
     def __str__(self):
-        return f"{self.__id}  {self.__name} {self.__likes} {self.__dislikes}"
+        return f"{self.__id}  {self.__name} {self.__likes} {self.__dislikes} {self.__viewed}"
