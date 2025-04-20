@@ -44,9 +44,12 @@ class User:
     @staticmethod
     def get_uniq_id():
         """Ищет уникальный id"""
-        users = User.__read_file()
-        id = len(users) + 1
-        return id
+        users = User.read_file()
+        existing_ids = {user.id for user in users}
+        new_id = 1
+        while new_id in existing_ids:
+            new_id += 1
+        return new_id
 
     @staticmethod
     def get_user_by_id(id):
@@ -59,10 +62,3 @@ class User:
 
     def __str__(self):
         return f"{self.__id}  {self.__name} {self.__likes} {self.__dislikes}"
-
-# user = User(User.get_uniq_id(), 'Test test', ['sports', 'travel'], ['fast food', 'politics'])
-# User.add_user(user)
-#
-# users = User.read_file()
-# for user in users:
-#     print(user)
