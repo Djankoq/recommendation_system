@@ -166,6 +166,44 @@ class TestUser(unittest.TestCase):
 
         self.assertEqual(str(context.exception), "Пользователь с id 445 не найден")
 
+    def test_add_like_success(self):
+        """Тестироуем метод add_likes - позитивная проверка"""
+        User.add_like_to_user(1, "str")
+        self.assertEqual(User.get_user_by_id(1).get_likes(), ["sports", "music", "str"])
+
+    def test_add_like_duplicate(self):
+        """Тестироуем метод add_likes - повторение категории"""
+        with self.assertRaises(ValueError) as context:
+            User.add_like_to_user(1, "sports")
+
+        self.assertEqual("Категория 'sports' уже есть в списке лайков", str(context.exception))
+
+    def test_add_like_user_not_found(self):
+        """Тестироуем метод add_likes - пользователь несуществуюет"""
+        with self.assertRaises(ValueError) as context:
+            User.add_like_to_user(99, "horror")
+
+        self.assertIn("Пользователь с id 99 не найден", str(context.exception))
+
+    def test_add_dislike_success(self):
+        """Тестироуем метод add_dislikes - позитивная проверка"""
+        User.add_dislike_to_user(1, "str")
+        self.assertEqual(User.get_user_by_id(1).get_dislikes(), ["politics", "str"])
+
+    def test_add_dislike_duplicate(self):
+        """Тестироуем метод add_dislikes - повторение категории"""
+        with self.assertRaises(ValueError) as context:
+            User.add_dislike_to_user(1, "politics")
+
+        self.assertEqual("Категория 'politics' уже есть в списке дизлайков", str(context.exception))
+
+    def test_add_dislike_user_not_found(self):
+        """Тестироуем метод add_likes - пользователь несуществуюет"""
+        with self.assertRaises(ValueError) as context:
+            User.add_dislike_to_user(99, "horror")
+
+        self.assertIn("Пользователь с id 99 не найден", str(context.exception))
+
 
 if __name__ == "__main__":
     unittest.main()
