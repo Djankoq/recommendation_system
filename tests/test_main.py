@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import patch
 from main import main_logic
 
+
 def test_main_logic(capsys):
     # Мокируем метод Position.get_recommend_position
     with patch('items.position.Position.get_recommend_position') as mock_get_recommend_position:

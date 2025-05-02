@@ -1,4 +1,5 @@
 from items.position import Position
+from user.user import User
 
 
 def main_logic():

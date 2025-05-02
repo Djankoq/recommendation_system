@@ -3,19 +3,31 @@ from user.user import User
 
 
 class Position:
-    __FILE_PATH = "./positions.json"  # Путь к файлу по умолчанию
+    FILE_PATH = "./positions.json"  # Путь к файлу по умолчанию
+
+    def set_file_path(self, new_path):
+        self.__FILE_PATH = new_path
 
     def __init__(self, id, name, tags):
         self.__id = id
         self.__name = name
         self.__tags = tags
 
+    def get_id(self):
+        return self.__id
+
+    def get_name(self):
+        return self.__name
+
+    def get_tags(self):
+        return self.__tags
+
     @staticmethod
-    def __read_file():
+    def read_file():
         """Считывает позиции из файла и возвращает список объектов Position"""
         positions = []
         try:
-            with open(Position.__FILE_PATH, 'r', encoding='utf-8') as f:
+            with open(Position.FILE_PATH, 'r', encoding='utf-8') as f:
                 content = f.read()
                 temp = json.loads(content) if content else []
             for item in temp:
@@ -31,7 +43,7 @@ class Position:
     @staticmethod
     def get_position_by_id(id):
         """Возвращает позицию по id"""
-        positions = Position.__read_file()
+        positions = Position.read_file()
         for position in positions:
             if position.__id == id:
                 return position
@@ -43,7 +55,7 @@ class Position:
             likes = User.get_user_by_id(user_id)._User__likes
             dislikes = User.get_user_by_id(user_id)._User__dislikes
             viewed = User.get_user_by_id(user_id)._User__viewed
-            positions = Position.__read_file()
+            positions = Position.read_file()
             recommend_positions = []
             for position in positions:
                 in_dislikes = False
