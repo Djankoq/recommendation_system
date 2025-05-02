@@ -71,6 +71,38 @@ class User:
         return new_id
 
     @staticmethod
+    def add_like_to_user(user_id, category):
+        """Добавляет категорию в список лайков конкретного пользователя"""
+        users = User.__read_file()
+        for user in users:
+            if user.__id == user_id:
+                if category in user.__likes:
+                    raise ValueError(f"Категория '{category}' уже есть в списке лайков")
+                user.__likes.append(category)
+                break
+        else:
+            raise ValueError(f"Пользователь с id {user_id} не найден")
+
+        with open(User.FILE_PATH, "w", encoding="utf-8") as f:
+            json.dump([u.__to_dict() for u in users], f, indent=4, ensure_ascii=False)
+
+    @staticmethod
+    def add_dislike_to_user(user_id, category):
+        """Добавляет категорию в список дизлайков конкретного пользователя"""
+        users = User.__read_file()
+        for user in users:
+            if user.__id == user_id:
+                if category in user.__dislikes:
+                    raise ValueError(f"Категория '{category}' уже есть в списке дизлайков")
+                user.__dislikes.append(category)
+                break
+        else:
+            raise ValueError(f"Пользователь с id {user_id} не найден")
+
+        with open(User.FILE_PATH, "w", encoding="utf-8") as f:
+            json.dump([u.__to_dict() for u in users], f, indent=4, ensure_ascii=False)
+
+    @staticmethod
     def add_viewed_item(user_id, item):
         """Добавляет элемент в список viewed пользователя с заданным id"""
         from items.position import Position
