@@ -1,8 +1,8 @@
 import json
-from user.user import User
 
 
 class Position:
+
     FILE_PATH = "./positions.json"  # Путь к файлу по умолчанию
 
     def set_file_path(self, new_path):
@@ -51,6 +51,7 @@ class Position:
 
     @staticmethod
     def get_recommend_position(user_id):
+        from user.user import User
         try:
             likes = User.get_user_by_id(user_id)._User__likes
             dislikes = User.get_user_by_id(user_id)._User__dislikes
