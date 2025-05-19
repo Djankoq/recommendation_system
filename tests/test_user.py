@@ -2,7 +2,7 @@ import unittest
 import json
 import os
 from unittest.mock import patch
-from user.user import User  # Импортируем ваш класс User
+from user.user import User
 
 
 class TestUser(unittest.TestCase):
@@ -166,42 +166,52 @@ class TestUser(unittest.TestCase):
 
         self.assertEqual(str(context.exception), "Пользователь с id 445 не найден")
 
-    def test_add_like_success(self):
-        """Тестироуем метод add_likes - позитивная проверка"""
+    @patch('items.position.Position.get_category_by_position_id')
+    def test_add_like_success(self, mock_get_category):
+        """Тестируем метод add_like_to_user - позитивная проверка"""
+        mock_get_category.return_value = ["new_category"]
         User.add_like_to_user(1, "str")
-        self.assertEqual(User.get_user_by_id(1).get_likes(), ["sports", "music", "str"])
+        self.assertIn("new_category", User.get_user_by_id(1).get_likes())
 
-    def test_add_like_duplicate(self):
-        """Тестироуем метод add_likes - повторение категории"""
+    @patch('items.position.Position.get_category_by_position_id')
+    def test_add_like_duplicate(self, mock_get_category):
+        """Тестируем метод add_like_to_user - повторное добавление категории"""
+        mock_get_category.return_value = ["sports"]
+        before = User.get_user_by_id(1).get_likes()
+        User.add_like_to_user(1, "str")
+        after = User.get_user_by_id(1).get_likes()
+        self.assertEqual(before, after)
+
+    @patch('items.position.Position.get_category_by_position_id')
+    def test_add_like_user_not_found(self, mock_get_category):
+        """Тестируем метод add_like_to_user - пользователь не существует"""
+        mock_get_category.return_value = ["some_category"]
         with self.assertRaises(ValueError) as context:
-            User.add_like_to_user(1, "sports")
-
-        self.assertEqual("Категория 'sports' уже есть в списке лайков", str(context.exception))
-
-    def test_add_like_user_not_found(self):
-        """Тестироуем метод add_likes - пользователь несуществуюет"""
-        with self.assertRaises(ValueError) as context:
-            User.add_like_to_user(99, "horror")
-
+            User.add_like_to_user(99, "str")
         self.assertIn("Пользователь с id 99 не найден", str(context.exception))
 
-    def test_add_dislike_success(self):
-        """Тестироуем метод add_dislikes - позитивная проверка"""
+    @patch('items.position.Position.get_category_by_position_id')
+    def test_add_dislike_success(self, mock_get_category):
+        """Тестируем метод add_dislike_to_user - позитивная проверка"""
+        mock_get_category.return_value = ["new_dislike"]
         User.add_dislike_to_user(1, "str")
-        self.assertEqual(User.get_user_by_id(1).get_dislikes(), ["politics", "str"])
+        self.assertIn("new_dislike", User.get_user_by_id(1).get_dislikes())
 
-    def test_add_dislike_duplicate(self):
-        """Тестироуем метод add_dislikes - повторение категории"""
+    @patch('items.position.Position.get_category_by_position_id')
+    def test_add_dislike_duplicate(self, mock_get_category):
+        """Тестируем метод add_dislike_to_user - повторное добавление категории"""
+        mock_get_category.return_value = ["politics"]
+        before = User.get_user_by_id(1).get_dislikes()
+        User.add_dislike_to_user(1, "str")
+        after = User.get_user_by_id(1).get_dislikes()
+        self.assertEqual(before, after)
+
+    @patch('items.position.Position.get_category_by_position_id')
+    def test_add_dislike_user_not_found(self, mock_get_category):
+        """Тестируем метод add_dislike_to_user - пользователь не существует"""
+        mock_get_category.return_value = ["some_category"]
         with self.assertRaises(ValueError) as context:
-            User.add_dislike_to_user(1, "politics")
-
-        self.assertEqual("Категория 'politics' уже есть в списке дизлайков", str(context.exception))
-
-    def test_add_dislike_user_not_found(self):
-        """Тестироуем метод add_likes - пользователь несуществуюет"""
-        with self.assertRaises(ValueError) as context:
-            User.add_dislike_to_user(99, "horror")
-
+            User.add_dislike_to_user(99, "str")
         self.assertIn("Пользователь с id 99 не найден", str(context.exception))
 
 
