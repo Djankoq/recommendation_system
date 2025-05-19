@@ -41,6 +41,15 @@ class Position:
         return f"{self.__id}  {self.__name} {self.__tags}"
 
     @staticmethod
+    def get_category_by_position_id(item_id):
+        positions = Position.read_file()
+        for position in positions:
+            if position.__id == item_id:
+                return position.__tags
+
+        return "Позиция не найдена"
+
+    @staticmethod
     def get_position_by_id(id):
         """Возвращает позицию по id"""
         positions = Position.read_file()

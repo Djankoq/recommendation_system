@@ -71,15 +71,18 @@ class User:
         return new_id
 
     @staticmethod
-    def add_like_to_user(user_id, category):
+    def add_like_to_user(user_id, position_id):
         """Добавляет категорию в список лайков конкретного пользователя"""
+        from items.position import Position
         users = User.__read_file()
+        categories = Position.get_category_by_position_id(position_id)
         for user in users:
             if user.__id == user_id:
-                if category in user.__likes:
-                    raise ValueError(f"Категория '{category}' уже есть в списке лайков")
-                user.__likes.append(category)
+                for category in categories:
+                    if category not in user.__likes and category not in user.__dislikes:
+                        user.__likes.append(category)
                 break
+
         else:
             raise ValueError(f"Пользователь с id {user_id} не найден")
 
@@ -87,14 +90,16 @@ class User:
             json.dump([u.__to_dict() for u in users], f, indent=4, ensure_ascii=False)
 
     @staticmethod
-    def add_dislike_to_user(user_id, category):
+    def add_dislike_to_user(user_id, position_id):
         """Добавляет категорию в список дизлайков конкретного пользователя"""
+        from items.position import Position
         users = User.__read_file()
+        categories = Position.get_category_by_position_id(position_id)
         for user in users:
             if user.__id == user_id:
-                if category in user.__dislikes:
-                    raise ValueError(f"Категория '{category}' уже есть в списке дизлайков")
-                user.__dislikes.append(category)
+                for category in categories:
+                    if category not in user.__likes and category not in user.__dislikes:
+                        user.__dislikes.append(category)
                 break
         else:
             raise ValueError(f"Пользователь с id {user_id} не найден")

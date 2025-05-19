@@ -22,11 +22,13 @@
         "name": "Henry Jackson",
         "like_categories": [
             "documentaries",
-            "fast food"
+            "fast food",
+            "politics"
         ],
         "dislike_categories": [
             "travel",
-            "science fiction"
+            "science fiction",
+            "sports"
         ],
         "viewed": [
             582,
@@ -761,11 +763,13 @@
         "like_categories": [
             "reality TV",
             "documentaries",
-            "science fiction"
+            "science fiction",
+            "str"
         ],
         "dislike_categories": [
             "politics",
-            "fashion"
+            "fashion",
+            "str"
         ],
         "viewed": [
             122,

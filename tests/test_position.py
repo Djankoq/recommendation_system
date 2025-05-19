@@ -110,6 +110,24 @@ class TestPosition(unittest.TestCase):
         expected_str = "1  Developer ['coding', 'teamwork']"
         self.assertEqual(str(position), expected_str)
 
+    @patch('items.position.Position.read_file')
+    def test_get_category_by_position_id_success(self, mock_read_file):
+        """Тестируем get_category_by_position_id - позиция найдена"""
+        mock_position = Position(1, "Test Item", ["tech", "gadgets"])
+        mock_read_file.return_value = [mock_position]
+
+        result = Position.get_category_by_position_id(1)
+        self.assertEqual(result, ["tech", "gadgets"])
+
+    @patch('items.position.Position.read_file')
+    def test_get_category_by_position_id_not_found(self, mock_read_file):
+        """Тестируем get_category_by_position_id - позиция не найдена"""
+        mock_position = Position(2, "Another Item", ["books", "education"])
+        mock_read_file.return_value = [mock_position]
+
+        result = Position.get_category_by_position_id(99)
+        self.assertEqual(result, "Позиция не найдена")
+
 
 if __name__ == "__main__":
     unittest.main()
