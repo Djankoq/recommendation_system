@@ -75,6 +75,10 @@ class User:
         """Добавляет категорию в список лайков конкретного пользователя"""
         from items.position import Position
         users = User.__read_file()
+
+        if Position.get_position_by_id(position_id) == "Позиция не найдена":
+            raise ValueError("Позиция не найдена")
+
         categories = Position.get_category_by_position_id(position_id)
         for user in users:
             if user.__id == user_id:
@@ -94,6 +98,10 @@ class User:
         """Добавляет категорию в список дизлайков конкретного пользователя"""
         from items.position import Position
         users = User.__read_file()
+
+        if Position.get_position_by_id(position_id) == "Позиция не найдена":
+            raise ValueError("Позиция не найдена")
+
         categories = Position.get_category_by_position_id(position_id)
         for user in users:
             if user.__id == user_id:

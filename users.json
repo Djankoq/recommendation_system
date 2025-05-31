@@ -17514,5 +17514,22 @@
             24,
             827
         ]
+    },
+    {
+        "id": 1001,
+        "name": "Egor Egorov",
+        "like_categories": [
+            "science fiction",
+            "fast food"
+        ],
+        "dislike_categories": [
+            "music"
+        ],
+        "viewed": [
+            12,
+            13,
+            555,
+            2
+        ]
     }
 ]
