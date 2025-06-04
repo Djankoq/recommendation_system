@@ -1,5 +1,5 @@
 import json
-
+from items.position import Position
 
 class User:
     FILE_PATH = "./users.json"  # Приватный атрибут для хранения пути к файлу
@@ -148,3 +148,28 @@ class User:
 
     def __str__(self):
         return f"{self.__id}  {self.__name} {self.__likes} {self.__dislikes} {self.__viewed}"
+
+    def add_viewed_position(user_id, position_id):
+        # Проверка позиции
+        try:
+            Position.get_position_by_id(position_id)
+        except ValueError as e:
+            raise ValueError(f"Ошибка проверки позиции: {str(e)}")
+
+            # Получаем и обновляем пользователя
+        try:
+            user = User.get_user_by_id(user_id)
+            if position_id in user.__viewed:
+                raise ValueError(f"Позиция {position_id} уже есть в списке просмотренных")
+            user.__viewed.append(position_id)
+        except ValueError as e:
+            raise ValueError(f"Ошибка обновления пользователя: {str(e)}")
+
+            # Сохраняем изменения
+        users = User.__read_file()
+        users = [user if u.__id == user_id else u for u in users]
+        try:
+            with open(User.FILE_PATH, "w", encoding="utf-8") as f:
+                json.dump([u.__to_dict() for u in users], f, indent=4, ensure_ascii=False)
+        except IOError as e:
+            raise ValueError(f"Ошибка сохранения данных: {str(e)}")
