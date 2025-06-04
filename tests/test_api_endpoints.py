@@ -101,6 +101,24 @@ def test_get_recommendations_success(http_server, test_user):
         for field in required_fields:
             assert field in item, f"Ожидалось поле '{field}' в рекомендации с ID {item.get('id')}"
 
+def test_like_movie_success(http_server, test_user):
+    user_id = test_user['id']
+    movie_id = 1
+    resp = requests.post(f'{http_server}/users/{user_id}/movie/{movie_id}/like')
+    assert resp.status_code == 200, f"Ожидался статус 200 при лайке, получен {resp.status_code}"
+
+def test_dislike_movie_success(http_server, test_user):
+    user_id = test_user['id']
+    movie_id = 1
+    resp = requests.post(f'{http_server}/users/{user_id}/movie/{movie_id}/dislike')
+    assert resp.status_code == 200, f"Ожидался статус 200 при дизлайке, получен {resp.status_code}"
+
+def test_add_viewed_movie_success(http_server, test_user):
+    user_id = test_user['id']
+    movie_id = 3
+    resp = requests.post(f'{http_server}/users/{user_id}/movie/{movie_id}/viewed')
+    assert resp.status_code == 200, f"Ожидался статус 200 при добавлении в просмотренные, получен {resp.status_code}"
+
 # Негативные тесты (ожидаемый результат отличается от фактического или проверяется ошибка)
 def test_create_user_duplicate_failure(http_server, test_user):
     new_user = test_user
@@ -154,3 +172,17 @@ def test_create_user_empty_categories(http_server):
     assert resp.status_code == 201, f"Ожидался статус 201 для пользователя с пустыми категориями, получен {resp.status_code}"
     data_resp = resp.json()
     assert data_resp['message'] == 'Пользователь создан'
+
+def test_like_movie_user_or_movie_not_found(http_server):
+    resp = requests.post(f'{http_server}/users/99999/movie/123/like')
+    assert resp.status_code == 404, f"Ожидался статус 404 при лайке несуществующего пользователя или фильма, получен {resp.status_code}"
+
+def test_dislike_movie_user_or_movie_not_found(http_server):
+    resp = requests.post(f'{http_server}/users/99999/movie/123/dislike')
+    assert resp.status_code == 404, f"Ожидался статус 404 при дизлайке несуществующего пользователя или фильма, получен {resp.status_code}"
+
+def test_add_viewed_movie_invalid_data(http_server, test_user):
+    user_id = test_user['id']
+    invalid_movie_id = 'not_an_id'
+    resp = requests.post(f'{http_server}/users/{user_id}/movie/{invalid_movie_id}/viewed')
+    assert resp.status_code in [400, 422, 404], f"Ожидался статус ошибки при некорректном ID фильма, получен {resp.status_code}"
