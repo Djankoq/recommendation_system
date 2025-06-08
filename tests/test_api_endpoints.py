@@ -101,6 +101,24 @@ def test_get_recommendations_success(http_server, test_user):
         for field in required_fields:
             assert field in item, f"Ожидалось поле '{field}' в рекомендации с ID {item.get('id')}"
 
+def test_like_movie_success(http_server):
+    user_id = 100
+    movie_id = 1
+    resp = requests.post(f'{http_server}/users/{user_id}/movie/{movie_id}/like')
+    assert resp.status_code == 200, f"Ожидался статус 200 при лайке, получен {resp.status_code}"
+
+def test_dislike_movie_success(http_server):
+    user_id = 100
+    movie_id = 1
+    resp = requests.post(f'{http_server}/users/{user_id}/movie/{movie_id}/dislike')
+    assert resp.status_code == 200, f"Ожидался статус 200 при дизлайке, получен {resp.status_code}"
+
+def test_add_viewed_movie_success(http_server):
+    user_id = 100
+    movie_id = 3
+    resp = requests.post(f'{http_server}/users/{user_id}/movie/{movie_id}/viewed')
+    assert resp.status_code == 200, f"Ожидался статус 200 при добавлении в просмотренные, получен {resp.status_code}"
+
 # Негативные тесты (ожидаемый результат отличается от фактического или проверяется ошибка)
 def test_create_user_duplicate_failure(http_server, test_user):
     new_user = test_user
@@ -154,3 +172,72 @@ def test_create_user_empty_categories(http_server):
     assert resp.status_code == 201, f"Ожидался статус 201 для пользователя с пустыми категориями, получен {resp.status_code}"
     data_resp = resp.json()
     assert data_resp['message'] == 'Пользователь создан'
+
+def test_like_movie_user_not_found(http_server):
+    non_existing_user_id = 99999
+    existing_movie_id = 1
+    resp = requests.post(f'{http_server}/users/{non_existing_user_id}/movie/{existing_movie_id}/like')
+    assert resp.status_code == 404, f"Ожидался статус 404 при лайке от несуществующего пользователя, получен {resp.status_code}"
+    data = resp.json()
+    assert 'error' in data
+    assert data['error'] == 'Пользователь не найден'
+
+
+def test_like_movie_movie_not_found(http_server):
+    existing_user_id = 100
+    non_existing_movie_id = 99999
+    resp = requests.post(f'{http_server}/users/{existing_user_id}/movie/{non_existing_movie_id}/like')
+    assert resp.status_code == 404, f"Ожидался статус 404 при лайке несуществующего фильма, получен {resp.status_code}"
+    data = resp.json()
+    assert 'error' in data
+    assert data['error'] == 'Фильм не найден'
+
+
+def test_dislike_movie_user_not_found(http_server):
+    non_existing_user_id = 99999
+    existing_movie_id = 1
+    resp = requests.post(f'{http_server}/users/{non_existing_user_id}/movie/{existing_movie_id}/dislike')
+    assert resp.status_code == 404, f"Ожидался статус 404 при дизлайке от несуществующего пользователя, получен {resp.status_code}"
+    data = resp.json()
+    assert 'error' in data
+    assert data['error'] == 'Пользователь не найден'
+
+
+def test_dislike_movie_movie_not_found(http_server):
+    existing_user_id = 100
+    non_existing_movie_id = 99999
+    resp = requests.post(f'{http_server}/users/{existing_user_id}/movie/{non_existing_movie_id}/dislike')
+    assert resp.status_code == 404, f"Ожидался статус 404 при дизлайке несуществующего фильма, получен {resp.status_code}"
+    data = resp.json()
+    assert 'error' in data
+    assert data['error'] == 'Фильм не найден'
+
+def test_add_viewed_movie_invalid_data(http_server):
+    user_id = 9999
+    invalid_movie_id = 'abc'
+    resp = requests.post(f'{http_server}/users/{user_id}/movie/{invalid_movie_id}/viewed')
+    assert resp.status_code in [400, 422, 404], f"Ожидался статус ошибки при некорректном ID фильма, получен {resp.status_code}"
+
+def test_add_viewed_movie_nonexistent_movie(http_server):
+    user_id = 100
+    nonexistent_movie_id = 999999
+    resp = requests.post(f'{http_server}/users/{user_id}/movie/{nonexistent_movie_id}/viewed')
+    assert resp.status_code == 404, f"Ожидался статус 404 для несуществующего фильма, получен {resp.status_code}"
+
+def test_like_movie_invalid_id_string(http_server):
+    user_id = 'abc'
+    movie_id = 100
+    resp = requests.post(f'{http_server}/users/{user_id}/movie/{movie_id}/like')
+    assert resp.status_code in [400, 422, 404], f"Ожидался статус ошибки при строковом user_id, получен {resp.status_code}"
+
+def test_like_movie_empty_path(http_server):
+    resp = requests.post(f'{http_server}/users//movie//like')
+    assert resp.status_code in [404, 400], f"Ожидался статус ошибки при пустом пути, получен {resp.status_code}" 
+
+def test_like_movie_twice(http_server):
+    user_id = 100
+    movie_id = 1
+    first_resp = requests.post(f'{http_server}/users/{user_id}/movie/{movie_id}/like')
+    assert first_resp.status_code == 200, f"Первый лайк должен быть успешным, получен {first_resp.status_code}"
+    second_resp = requests.post(f'{http_server}/users/{user_id}/movie/{movie_id}/like')
+    assert second_resp.status_code in [200, 409], f"Ожидался 409 или 200 при повторном лайке, получен {second_resp.status_code}"          
