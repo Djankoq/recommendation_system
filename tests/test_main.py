@@ -19,4 +19,4 @@ def test_main_logic(capsys):
         assert "Position3" in captured.out
 
         # Проверяем, что метод был вызван с правильным аргументом
-        mock_get_recommend_position.assert_called_once_with(1000)
+        mock_get_recommend_position.assert_called_once_with(44)

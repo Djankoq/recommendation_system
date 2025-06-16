@@ -2,7 +2,9 @@ from pymongo import MongoClient
 import json
 
 client = MongoClient("mongodb://localhost:27017/")
-db = client["recommendation_service"]  # Имя базы данных
+db = client["recommendation_system"]  # Имя базы данных
+users_collection = db["users"]
+positions_collection = db["positions"]
 
 def import_json_to_collection(json_path, collection_name):
     with open(json_path, encoding="utf-8") as f:

@@ -1,150 +1,209 @@
-import json
+# import json
 
+
+# class User:
+#     FILE_PATH = "./users.json"  # Приватный атрибут для хранения пути к файлу
+
+#     def __init__(self, id, name, likes, dislikes, viewed):
+#         self.__id = id  # Приватные атрибуты экземпляра
+#         self.__name = name
+#         self.__likes = likes
+#         self.__dislikes = dislikes
+#         self.__viewed = viewed
+
+#     def get_id(self):
+#         return self.__id
+
+#     def get_name(self):
+#         return self.__name
+
+#     def get_likes(self):
+#         return self.__likes
+
+#     def get_dislikes(self):
+#         return self.__dislikes
+
+#     def get_viewed(self):
+#         return self.__viewed
+
+#     def __to_dict(self):
+#         """Конвертирует объект User в словарь для сериализации в JSON"""
+#         return {
+#             "id": self.__id,
+#             "name": self.__name,
+#             "like_categories": self.__likes,
+#             "dislike_categories": self.__dislikes,
+#             "viewed": self.__viewed
+#         }
+
+#     @staticmethod
+#     def __read_file():
+#         """Считывает пользователей из файла и возвращает список объектов User"""
+#         users = []
+#         try:
+#             with open(User.FILE_PATH, "r", encoding="utf-8") as f:
+#                 content = f.read()
+#                 temp = json.loads(content) if content else []
+#             for item in temp:
+#                 user = User(item["id"], item["name"], item["like_categories"], item["dislike_categories"],
+#                             item["viewed"])
+#                 users.append(user)
+#         except FileNotFoundError:
+#             return []
+#         return users
+
+#     @staticmethod
+#     def add_user(user):
+#         """Добавляет нового пользователя в файл users.json"""
+#         users = User.__read_file()
+#         users.append(user)
+#         with open(User.FILE_PATH, "w", encoding="utf-8") as f:
+#             json.dump([u.__to_dict() for u in users], f, indent=4, ensure_ascii=False)
+
+#     @staticmethod
+#     def get_uniq_id():
+#         """Ищет уникальный id"""
+#         users = User.__read_file()
+#         existing_ids = {user.__id for user in users}
+#         new_id = 1
+#         while new_id in existing_ids:
+#             new_id += 1
+#         return new_id
+
+#     @staticmethod
+#     def add_like_to_user(user_id, position_id):
+#         """Добавляет категорию в список лайков конкретного пользователя"""
+#         from items.position import Position
+#         users = User.__read_file()
+
+#         if Position.get_position_by_id(position_id) == "Позиция не найдена":
+#             raise ValueError("Позиция не найдена")
+
+#         categories = Position.get_category_by_position_id(position_id)
+#         for user in users:
+#             if user.__id == user_id:
+#                 for category in categories:
+#                     if category not in user.__likes and category not in user.__dislikes:
+#                         user.__likes.append(category)
+#                 break
+
+#         else:
+#             raise ValueError(f"Пользователь с id {user_id} не найден")
+
+#         with open(User.FILE_PATH, "w", encoding="utf-8") as f:
+#             json.dump([u.__to_dict() for u in users], f, indent=4, ensure_ascii=False)
+
+#     @staticmethod
+#     def add_dislike_to_user(user_id, position_id):
+#         """Добавляет категорию в список дизлайков конкретного пользователя"""
+#         from items.position import Position
+#         users = User.__read_file()
+
+#         if Position.get_position_by_id(position_id) == "Позиция не найдена":
+#             raise ValueError("Позиция не найдена")
+
+#         categories = Position.get_category_by_position_id(position_id)
+#         for user in users:
+#             if user.__id == user_id:
+#                 for category in categories:
+#                     if category not in user.__likes and category not in user.__dislikes:
+#                         user.__dislikes.append(category)
+#                 break
+#         else:
+#             raise ValueError(f"Пользователь с id {user_id} не найден")
+
+#         with open(User.FILE_PATH, "w", encoding="utf-8") as f:
+#             json.dump([u.__to_dict() for u in users], f, indent=4, ensure_ascii=False)
+
+#     @staticmethod
+#     def add_viewed_item(user_id, item):
+#         """Добавляет элемент в список viewed пользователя с заданным id"""
+#         from items.position import Position
+#         if Position.get_position_by_id(item) == "Позиция не найдена":
+#             raise ValueError("Позиция не найдена")
+#         users = User.__read_file()
+#         found = False
+#         for user in users:
+#             if user.__id == user_id:
+#                 if item in user.__viewed:
+#                     raise ValueError(f"Позиция {item} уже была добавлена")
+#                 else:
+#                     user.__viewed.append(item)
+#                     found = True
+#                     break
+#         if not found:
+#             raise ValueError(f"Пользователь с id {user_id} не найден")
+
+#         with open(User.FILE_PATH, "w", encoding="utf-8") as f:
+#             json.dump([u.__to_dict() for u in users], f, indent=4, ensure_ascii=False)
+
+#     @staticmethod
+#     def get_user_by_id(id):
+#         """Возвращает пользователя по id"""
+#         users = User.__read_file()
+#         for user in users:
+#             if user.__id == id:
+#                 return user
+#         raise ValueError(f"Пользователь с id {id} не найден")
+
+#     def __str__(self):
+#         return f"{self.__id}  {self.__name} {self.__likes} {self.__dislikes} {self.__viewed}"
+from pymongo import MongoClient
+
+client = MongoClient("mongodb://localhost:27017/")
+db = client["recommendation_service"]
+users_collection = db["users"]
+positions_collection = db["positions"]
 
 class User:
-    FILE_PATH = "./users.json"  # Приватный атрибут для хранения пути к файлу
-
-    def __init__(self, id, name, likes, dislikes, viewed):
-        self.__id = id  # Приватные атрибуты экземпляра
-        self.__name = name
-        self.__likes = likes
-        self.__dislikes = dislikes
-        self.__viewed = viewed
-
-    def get_id(self):
-        return self.__id
-
-    def get_name(self):
-        return self.__name
-
-    def get_likes(self):
-        return self.__likes
-
-    def get_dislikes(self):
-        return self.__dislikes
-
-    def get_viewed(self):
-        return self.__viewed
-
-    def __to_dict(self):
-        """Конвертирует объект User в словарь для сериализации в JSON"""
-        return {
-            "id": self.__id,
-            "name": self.__name,
-            "like_categories": self.__likes,
-            "dislike_categories": self.__dislikes,
-            "viewed": self.__viewed
-        }
-
     @staticmethod
-    def __read_file():
-        """Считывает пользователей из файла и возвращает список объектов User"""
-        users = []
-        try:
-            with open(User.FILE_PATH, "r", encoding="utf-8") as f:
-                content = f.read()
-                temp = json.loads(content) if content else []
-            for item in temp:
-                user = User(item["id"], item["name"], item["like_categories"], item["dislike_categories"],
-                            item["viewed"])
-                users.append(user)
-        except FileNotFoundError:
-            return []
-        return users
-
-    @staticmethod
-    def add_user(user):
-        """Добавляет нового пользователя в файл users.json"""
-        users = User.__read_file()
-        users.append(user)
-        with open(User.FILE_PATH, "w", encoding="utf-8") as f:
-            json.dump([u.__to_dict() for u in users], f, indent=4, ensure_ascii=False)
+    def add_user(user_dict):
+        """Добавляет нового пользователя в коллекцию users"""
+        users_collection.insert_one(user_dict)
 
     @staticmethod
     def get_uniq_id():
-        """Ищет уникальный id"""
-        users = User.__read_file()
-        existing_ids = {user.__id for user in users}
-        new_id = 1
-        while new_id in existing_ids:
-            new_id += 1
-        return new_id
+        """Ищет уникальный id (максимальный + 1)"""
+        last = users_collection.find_one(sort=[("id", -1)])
+        return (last["id"] + 1) if last else 1
+
+    @staticmethod
+    def get_user_by_id(user_id):
+        user = users_collection.find_one({"id": user_id})
+        if not user:
+            raise ValueError(f"Пользователь с id {user_id} не найден")
+        user.pop('_id', None)
+        return user
 
     @staticmethod
     def add_like_to_user(user_id, position_id):
-        """Добавляет категорию в список лайков конкретного пользователя"""
-        from items.position import Position
-        users = User.__read_file()
-
-        if Position.get_position_by_id(position_id) == "Позиция не найдена":
+        pos = positions_collection.find_one({"id": position_id})
+        if not pos:
             raise ValueError("Позиция не найдена")
-
-        categories = Position.get_category_by_position_id(position_id)
-        for user in users:
-            if user.__id == user_id:
-                for category in categories:
-                    if category not in user.__likes and category not in user.__dislikes:
-                        user.__likes.append(category)
-                break
-
-        else:
-            raise ValueError(f"Пользователь с id {user_id} не найден")
-
-        with open(User.FILE_PATH, "w", encoding="utf-8") as f:
-            json.dump([u.__to_dict() for u in users], f, indent=4, ensure_ascii=False)
+        categories = pos.get("categories", [])
+        import pdb; pdb.set_trace();
+        users_collection.update_one(
+            {"id": user_id},
+            {"$addToSet": {"like_categories": {"$each": categories}}}
+        )
 
     @staticmethod
     def add_dislike_to_user(user_id, position_id):
-        """Добавляет категорию в список дизлайков конкретного пользователя"""
-        from items.position import Position
-        users = User.__read_file()
-
-        if Position.get_position_by_id(position_id) == "Позиция не найдена":
+        pos = positions_collection.find_one({"id": position_id})
+        if not pos:
             raise ValueError("Позиция не найдена")
-
-        categories = Position.get_category_by_position_id(position_id)
-        for user in users:
-            if user.__id == user_id:
-                for category in categories:
-                    if category not in user.__likes and category not in user.__dislikes:
-                        user.__dislikes.append(category)
-                break
-        else:
-            raise ValueError(f"Пользователь с id {user_id} не найден")
-
-        with open(User.FILE_PATH, "w", encoding="utf-8") as f:
-            json.dump([u.__to_dict() for u in users], f, indent=4, ensure_ascii=False)
+        categories = pos.get("categories", [])
+        users_collection.update_one(
+            {"id": user_id},
+            {"$addToSet": {"dislike_categories": {"$each": categories}}}
+        )
 
     @staticmethod
-    def add_viewed_item(user_id, item):
-        """Добавляет элемент в список viewed пользователя с заданным id"""
-        from items.position import Position
-        if Position.get_position_by_id(item) == "Позиция не найдена":
+    def add_viewed_item(user_id, position_id):
+        pos = positions_collection.find_one({"id": position_id})
+        if not pos:
             raise ValueError("Позиция не найдена")
-        users = User.__read_file()
-        found = False
-        for user in users:
-            if user.__id == user_id:
-                if item in user.__viewed:
-                    raise ValueError(f"Позиция {item} уже была добавлена")
-                else:
-                    user.__viewed.append(item)
-                    found = True
-                    break
-        if not found:
-            raise ValueError(f"Пользователь с id {user_id} не найден")
-
-        with open(User.FILE_PATH, "w", encoding="utf-8") as f:
-            json.dump([u.__to_dict() for u in users], f, indent=4, ensure_ascii=False)
-
-    @staticmethod
-    def get_user_by_id(id):
-        """Возвращает пользователя по id"""
-        users = User.__read_file()
-        for user in users:
-            if user.__id == id:
-                return user
-        raise ValueError(f"Пользователь с id {id} не найден")
-
-    def __str__(self):
-        return f"{self.__id}  {self.__name} {self.__likes} {self.__dislikes} {self.__viewed}"
+        users_collection.update_one(
+            {"id": user_id},
+            {"$addToSet": {"viewed": position_id}}
+        )
