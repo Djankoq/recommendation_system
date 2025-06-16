@@ -10,27 +10,27 @@ db = client["recommendation_system"]
 users_collection = db["users"]
 positions_collection = db["positions"]
 
-class User:
-    @staticmethod
-    def add_like_to_user(user_id, movie_id):
-        users_collection.update_one(
-            {"id": user_id},
-            {"$addToSet": {"like_categories": movie_id}}
-        )
+# class User:
+#     @staticmethod
+#     def add_like_to_user(user_id, movie_id):
+#         users_collection.update_one(
+#             {"id": user_id},
+#             {"$addToSet": {"like_categories": movie_id}}
+#         )
 
-    @staticmethod
-    def add_dislike_to_user(user_id, movie_id):
-        users_collection.update_one(
-            {"id": user_id},
-            {"$addToSet": {"dislike_categories": movie_id}}
-        )
+#     @staticmethod
+#     def add_dislike_to_user(user_id, movie_id):
+#         users_collection.update_one(
+#             {"id": user_id},
+#             {"$addToSet": {"dislike_categories": movie_id}}
+#         )
 
-    @staticmethod
-    def add_viewed_item(user_id, movie_id):
-        users_collection.update_one(
-            {"id": user_id},
-            {"$addToSet": {"viewed": movie_id}}
-        )
+#     @staticmethod
+#     def add_viewed_item(user_id, movie_id):
+#         users_collection.update_one(
+#             {"id": user_id},
+#             {"$addToSet": {"viewed": movie_id}}
+#         )
 
 class UserHandler(BaseHTTPRequestHandler):
     def _send_json(self, data, status=200):

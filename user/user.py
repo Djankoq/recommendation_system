@@ -180,11 +180,11 @@ class User:
         pos = positions_collection.find_one({"id": position_id})
         if not pos:
             raise ValueError("Позиция не найдена")
-        categories = pos.get("categories", [])
-        import pdb; pdb.set_trace();
+        tags = pos.get("tag", [])
+        print("DEBUG tags:", tags)
         users_collection.update_one(
             {"id": user_id},
-            {"$addToSet": {"like_categories": {"$each": categories}}}
+            {"$addToSet": {"like_categories": {"$each": tags}}}
         )
 
     @staticmethod
