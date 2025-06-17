@@ -1,88 +1,86 @@
-import json
+from pymongo import MongoClient
 from user.user import User
 
 
 class Position:
-    FILE_PATH = "./positions.json"  # Путь к файлу по умолчанию
-
-    def set_file_path(self, new_path):
-        self.__FILE_PATH = new_path
-
-    def __init__(self, id, name, tags):
-        self.__id = id
-        self.__name = name
-        self.__tags = tags
-
-    def get_id(self):
-        return self.__id
-
-    def get_name(self):
-        return self.__name
-
-    def get_tags(self):
-        return self.__tags
+    client = MongoClient("mongodb://localhost:27017/")
+    db = client["recommendation_system"]
+    positions_collection = db["positions"]
+    users_collection = db["users"]
 
     @staticmethod
-    def read_file():
-        """Считывает позиции из файла и возвращает список объектов Position"""
-        positions = []
-        try:
-            with open(Position.FILE_PATH, 'r', encoding='utf-8') as f:
-                content = f.read()
-                temp = json.loads(content) if content else []
-            for item in temp:
-                position = Position(item['id'], item['position_name'], item['tag'])
-                positions.append(position)
-        except FileNotFoundError:
-            return []
-        return positions
+    def get_category_by_position_id(position_id):
+        '''Возвращает категорию фильма по id'''
+        pos = Position.positions_collection.find_one({"id": position_id})
+        if not pos:
+            return "Позиция не найдена"
+        return pos.get("categories", [])
+
+    @staticmethod
+    def get_position_by_id(position_id):
+        '''Возвразщает фильм по id'''
+        pos = Position.positions_collection.find_one({"id": position_id})
+        if not pos:
+            return "Позиция не найдена"
+        pos.pop('_id', None)
+        return pos
+
+    @staticmethod
+    def get_recommendations_for_user(user_id, limit=5):
+        '''Возвразщает первые 5 фильмов, рекомендованных пользователю'''
+        print(user_id)
+        user = Position.users_collection.find_one({"id": user_id})
+        print(user)
+        if not user:
+            return "Пользователь не найден"
+
+        viewed_ids = set(user.get('viewed', []))
+
+        all_categories = set()
+        for u in Position.users_collection.find():
+            all_categories.update(u.get('like_categories', []))
+            all_categories.update(u.get('dislike_categories', []))
+        all_categories = list(all_categories)
+
+        def user_to_vector(user, categories):
+            """Строит вектор пользователя"""
+            return [
+                1 if cat in user.get('like_categories', []) else
+                -1 if cat in user.get('dislike_categories', []) else
+                0
+                for cat in categories
+            ]
+
+        def cosine_similarity(a, b):
+            '''Считает косинусное сходство'''
+            dot = sum(x * y for x, y in zip(a, b))
+            norm_a = sum(x ** 2 for x in a) ** 0.5
+            norm_b = sum(y ** 2 for y in b) ** 0.5
+            if norm_a == 0 or norm_b == 0:
+                return 0
+            return dot / (norm_a * norm_b)
+
+        target_vec = user_to_vector(user, all_categories)
+
+        position_scores = dict()
+        for other in Position.users_collection.find({"id": {"$ne": user_id}}):
+            sim = cosine_similarity(target_vec, user_to_vector(other, all_categories))
+            if sim <= 0:
+                continue
+            liked_cats = set(other.get('like_categories', []))
+            for pos in Position.positions_collection.find(
+                    {"tag": {"$in": list(liked_cats)}, "id": {"$nin": list(viewed_ids)}}):
+                pid = pos['id']
+                position_scores[pid] = position_scores.get(pid, 0) + sim
+
+        top_ids = [pid for pid, _ in sorted(position_scores.items(), key=lambda x: x[1], reverse=True)][:limit]
+
+        recommended = list(Position.positions_collection.find({"id": {"$in": top_ids}}))
+        for rec in recommended:
+            rec.pop('_id', None)
+        recommended.sort(key=lambda r: top_ids.index(r['id']))
+        return recommended
 
     def __str__(self):
-        return f"{self.__id}  {self.__name} {self.__tags}"
-
-    @staticmethod
-    def get_category_by_position_id(item_id):
-        positions = Position.read_file()
-        for position in positions:
-            if position.__id == item_id:
-                return position.__tags
-
-        return "Позиция не найдена"
-
-    @staticmethod
-    def get_position_by_id(id):
-        """Возвращает позицию по id"""
-        positions = Position.read_file()
-        for position in positions:
-            if position.__id == id:
-                return position
-        return "Позиция не найдена"
-
-    @staticmethod
-    def get_recommend_position(user_id):
-        try:
-            likes = User.get_user_by_id(user_id)._User__likes
-            dislikes = User.get_user_by_id(user_id)._User__dislikes
-            viewed = User.get_user_by_id(user_id)._User__viewed
-            positions = Position.read_file()
-            recommend_positions = []
-            for position in positions:
-                in_dislikes = False
-                in_viewed = False
-
-                if position.__id in viewed:
-                    in_viewed = True
-
-                for tag in position.__tags:
-                    if tag in dislikes:
-                        in_dislikes = True
-                        break
-
-                if not in_dislikes and not in_viewed and tag in likes:
-                    recommend_positions.append(position)
-
-            return recommend_positions
-        except AttributeError:
-            return "Пользователь не найден"
-        except TypeError:
-            return "Пользователь не найден"
+        '''Переопределенный метод __str___'''
+        return f"{getattr(self, 'id', '')}  {getattr(self, 'position_name', '')} {getattr(self, 'tag', '')}"
