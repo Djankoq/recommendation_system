@@ -5,10 +5,14 @@ import re
 from pymongo import MongoClient
 from user.user import User
 from items.position import Position
+import os
 
 # Подключение к MongoDB
 client = MongoClient("mongodb://localhost:27017/")
-db = client["recommendation_system"]
+
+db_name = os.environ.get("DB_NAME", "recommendation_system")
+db = client[db_name]
+
 users_collection = db["users"]
 positions_collection = db["positions"]
 

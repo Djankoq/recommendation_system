@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ '*' ]
 
+env:
+  DB_NAME: recommendation_system_test
+
 jobs:
   test:
     runs-on: ubuntu-latest
