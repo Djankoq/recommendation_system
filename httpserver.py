@@ -3,34 +3,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 import re
 from pymongo import MongoClient
+from user.user import User
+from items.position import Position
 
 # Подключение к MongoDB
 client = MongoClient("mongodb://localhost:27017/")
 db = client["recommendation_system"]
 users_collection = db["users"]
 positions_collection = db["positions"]
-
-# class User:
-#     @staticmethod
-#     def add_like_to_user(user_id, movie_id):
-#         users_collection.update_one(
-#             {"id": user_id},
-#             {"$addToSet": {"like_categories": movie_id}}
-#         )
-
-#     @staticmethod
-#     def add_dislike_to_user(user_id, movie_id):
-#         users_collection.update_one(
-#             {"id": user_id},
-#             {"$addToSet": {"dislike_categories": movie_id}}
-#         )
-
-#     @staticmethod
-#     def add_viewed_item(user_id, movie_id):
-#         users_collection.update_one(
-#             {"id": user_id},
-#             {"$addToSet": {"viewed": movie_id}}
-#         )
 
 class UserHandler(BaseHTTPRequestHandler):
     def _send_json(self, data, status=200):
@@ -69,21 +49,32 @@ class UserHandler(BaseHTTPRequestHandler):
             else:
                 self._send_json({'error': 'Пользователь не найден'}, status=404)
             return
-
+        
         match = re.match(r'^/users/(\d+)/recommendations$', parsed.path)
         if match:
             user_id = int(match.group(1))
-            user = self._find_user(user_id)
-            if not user:
-                self._send_json({'error': 'Пользователь не найден'}, status=404)
-                return
-            viewed_ids = user.get('viewed', [])
-            # Получаем первые 5 непосещённых позиций из MongoDB
-            recommended = list(positions_collection.find({"id": {"$nin": viewed_ids}}).limit(5))
-            for rec in recommended:
-                rec.pop('_id', None)
-            self._send_json(recommended)
+            recommendations = Position.get_recommendations_for_user(user_id)
+            if isinstance(recommendations, str):  # если вернулась ошибка
+                self._send_json({'error': recommendations}, status=404)
+            else:
+                self._send_json(recommendations)
             return
+
+
+        # match = re.match(r'^/users/(\d+)/recommendations$', parsed.path)
+        # if match:
+        #     user_id = int(match.group(1))
+        #     user = self._find_user(user_id)
+        #     if not user:
+        #         self._send_json({'error': 'Пользователь не найден'}, status=404)
+        #         return
+        #     viewed_ids = user.get('viewed', [])
+        #     # Получаем первые 5 непосещённых позиций из MongoDB
+        #     recommended = list(positions_collection.find({"id": {"$nin": viewed_ids}}).limit(5))
+        #     for rec in recommended:
+        #         rec.pop('_id', None)
+        #     self._send_json(recommended)
+        #     return
 
         self._send_json({'error': 'Не найдено'}, status=404)
 
@@ -95,20 +86,8 @@ class UserHandler(BaseHTTPRequestHandler):
         if parsed.path == '/users':
             try:
                 new_user = self._read_body()
-                required_fields = {'id', 'name', 'like_categories', 'dislike_categories', 'viewed'}
-                if not required_fields.issubset(new_user):
-                    self._send_json({'error': 'Отсутствуют обязательные поля'}, status=400)
-                    return
-
-                if not isinstance(new_user['id'], int) or not isinstance(new_user['name'], str):
-                    self._send_json({'error': 'Неверный тип для id или имени'}, status=400)
-                    return
-                if self._find_user(new_user['id']):
-                    self._send_json({'error': 'Пользователь уже существует'}, status=400)
-                    return
-
-                users_collection.insert_one(new_user)
-                self._send_json({'message': 'Пользователь создан'}, status=201)
+                result, status = User.add_user(new_user)
+                self._send_json(result, status=status)
             except ValueError as e:
                 self._send_json({'error': str(e)}, status=400)
             return
@@ -124,8 +103,6 @@ class UserHandler(BaseHTTPRequestHandler):
                     return
 
                 if action == 'like':
-                    print(user_id)
-                    print(movie_id)
                     User.add_like_to_user(user_id, movie_id)
                     self._send_json({'message': 'Лайк добавлен'}, status=200)
 
