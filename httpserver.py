@@ -7,7 +7,6 @@ from user.user import User
 from items.position import Position
 import os
 
-# Подключение к MongoDB
 client = MongoClient("mongodb://localhost:27017/")
 
 db_name = os.environ.get("DB_NAME", "recommendation_system")
@@ -16,8 +15,10 @@ db = client[db_name]
 users_collection = db["users"]
 positions_collection = db["positions"]
 
+
 class UserHandler(BaseHTTPRequestHandler):
     def _send_json(self, data, status=200):
+        '''Отправка json-файла в ответе'''
         response = json.dumps(data, ensure_ascii=False).encode('utf-8')
         self.send_response(status)
         self.send_header('Content-Type', 'application/json')
@@ -26,6 +27,7 @@ class UserHandler(BaseHTTPRequestHandler):
         self.wfile.write(response)
 
     def _read_body(self):
+        '''Читает тело запроса'''
         try:
             content_length = int(self.headers.get('Content-Length', 0))
             if content_length == 0:
@@ -36,12 +38,15 @@ class UserHandler(BaseHTTPRequestHandler):
             raise ValueError(f"Неверный JSON: {str(e)}")
 
     def _find_user(self, user_id):
+        '''Поиск пользователя по id'''
         return users_collection.find_one({"id": user_id})
 
     def _find_position(self, position_id):
         return positions_collection.find_one({"id": position_id})
 
     def do_GET(self):
+        '''Создаем GET запросы'''
+        '''Поиск фильма по id'''
         parsed = urlparse(self.path)
         match = re.match(r'^/users/(\d+)$', parsed.path)
         if match:
@@ -53,12 +58,12 @@ class UserHandler(BaseHTTPRequestHandler):
             else:
                 self._send_json({'error': 'Пользователь не найден'}, status=404)
             return
-        
+
         match = re.match(r'^/users/(\d+)/recommendations$', parsed.path)
         if match:
             user_id = int(match.group(1))
             recommendations = Position.get_recommendations_for_user(user_id)
-            if isinstance(recommendations, str):  # если вернулась ошибка
+            if isinstance(recommendations, str):
                 self._send_json({'error': recommendations}, status=404)
             else:
                 self._send_json(recommendations)
@@ -67,9 +72,9 @@ class UserHandler(BaseHTTPRequestHandler):
         self._send_json({'error': 'Не найдено'}, status=404)
 
     def do_POST(self):
+        '''Создаем POST запросы'''
         parsed = urlparse(self.path)
         path_parts = parsed.path.strip('/').split('/')
-        # import pdb; pdb.set_trace()
 
         if parsed.path == '/users':
             try:

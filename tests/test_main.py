@@ -1,7 +1,9 @@
 from unittest.mock import patch
 from main import main_logic
 
+
 def test_main_logic(capsys):
+    '''Тестирует логику файла main.py'''
     with patch('main.Position.get_recommendations_for_user') as mock_get_recommendations:
         mock_get_recommendations.return_value = ["Position1", "Position2", "Position3"]
 

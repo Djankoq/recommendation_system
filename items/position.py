@@ -1,8 +1,8 @@
 from pymongo import MongoClient
 from user.user import User
 
+
 class Position:
-    # По умолчанию используем боевую БД, но можно подменять в тестах!
     client = MongoClient("mongodb://localhost:27017/")
     db = client["recommendation_system"]
     positions_collection = db["positions"]
@@ -10,6 +10,7 @@ class Position:
 
     @staticmethod
     def get_category_by_position_id(position_id):
+        '''Возвращает категорию фильма по id'''
         pos = Position.positions_collection.find_one({"id": position_id})
         if not pos:
             return "Позиция не найдена"
@@ -17,6 +18,7 @@ class Position:
 
     @staticmethod
     def get_position_by_id(position_id):
+        '''Возвразщает фильм по id'''
         pos = Position.positions_collection.find_one({"id": position_id})
         if not pos:
             return "Позиция не найдена"
@@ -25,6 +27,7 @@ class Position:
 
     @staticmethod
     def get_recommendations_for_user(user_id, limit=5):
+        '''Возвразщает первые 5 фильмов, рекомендованных пользователю'''
         print(user_id)
         user = Position.users_collection.find_one({"id": user_id})
         print(user)
@@ -33,7 +36,6 @@ class Position:
 
         viewed_ids = set(user.get('viewed', []))
 
-        # Собираем все уникальные категории
         all_categories = set()
         for u in Position.users_collection.find():
             all_categories.update(u.get('like_categories', []))
@@ -41,6 +43,7 @@ class Position:
         all_categories = list(all_categories)
 
         def user_to_vector(user, categories):
+            """Строит вектор пользователя"""
             return [
                 1 if cat in user.get('like_categories', []) else
                 -1 if cat in user.get('dislike_categories', []) else
@@ -49,38 +52,35 @@ class Position:
             ]
 
         def cosine_similarity(a, b):
-            dot = sum(x*y for x, y in zip(a, b))
-            norm_a = sum(x**2 for x in a) ** 0.5
-            norm_b = sum(y**2 for y in b) ** 0.5
+            '''Считает косинусное сходство'''
+            dot = sum(x * y for x, y in zip(a, b))
+            norm_a = sum(x ** 2 for x in a) ** 0.5
+            norm_b = sum(y ** 2 for y in b) ** 0.5
             if norm_a == 0 or norm_b == 0:
                 return 0
             return dot / (norm_a * norm_b)
 
         target_vec = user_to_vector(user, all_categories)
 
-        # Для каждого другого пользователя считаем похожесть
         position_scores = dict()
         for other in Position.users_collection.find({"id": {"$ne": user_id}}):
             sim = cosine_similarity(target_vec, user_to_vector(other, all_categories))
             if sim <= 0:
-                continue  # не учитываем совсем непохожих
-
-            # Для всех позиций, которые нравятся этому пользователю
+                continue
             liked_cats = set(other.get('like_categories', []))
-            for pos in Position.positions_collection.find({"tag": {"$in": list(liked_cats)}, "id": {"$nin": list(viewed_ids)}}):
+            for pos in Position.positions_collection.find(
+                    {"tag": {"$in": list(liked_cats)}, "id": {"$nin": list(viewed_ids)}}):
                 pid = pos['id']
                 position_scores[pid] = position_scores.get(pid, 0) + sim
 
-        # Сортируем позиции по убыванию "рейтинга"
         top_ids = [pid for pid, _ in sorted(position_scores.items(), key=lambda x: x[1], reverse=True)][:limit]
 
         recommended = list(Position.positions_collection.find({"id": {"$in": top_ids}}))
         for rec in recommended:
             rec.pop('_id', None)
-        # Можно отсортировать вручную по top_ids, если порядок важен
         recommended.sort(key=lambda r: top_ids.index(r['id']))
         return recommended
 
     def __str__(self):
-        # Добавь этот метод, чтобы тест str проходил!
+        '''Переопределенный метод __str___'''
         return f"{getattr(self, 'id', '')}  {getattr(self, 'position_name', '')} {getattr(self, 'tag', '')}"
