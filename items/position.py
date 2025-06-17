@@ -1,22 +1,23 @@
 from pymongo import MongoClient
 from user.user import User
 
-client = MongoClient("mongodb://localhost:27017/")
-db = client["recommendation_system"]
-positions_collection = db["positions"]
-users_collection = db["users"]
-
 class Position:
+    # По умолчанию используем боевую БД, но можно подменять в тестах!
+    client = MongoClient("mongodb://localhost:27017/")
+    db = client["recommendation_system"]
+    positions_collection = db["positions"]
+    users_collection = db["users"]
+
     @staticmethod
     def get_category_by_position_id(position_id):
-        pos = positions_collection.find_one({"id": position_id})
+        pos = Position.positions_collection.find_one({"id": position_id})
         if not pos:
             return "Позиция не найдена"
         return pos.get("categories", [])
 
     @staticmethod
     def get_position_by_id(position_id):
-        pos = positions_collection.find_one({"id": position_id})
+        pos = Position.positions_collection.find_one({"id": position_id})
         if not pos:
             return "Позиция не найдена"
         pos.pop('_id', None)
@@ -24,7 +25,9 @@ class Position:
 
     @staticmethod
     def get_recommendations_for_user(user_id, limit=5):
-        user = users_collection.find_one({"id": user_id})
+        print(user_id)
+        user = Position.users_collection.find_one({"id": user_id})
+        print(user)
         if not user:
             return "Пользователь не найден"
 
@@ -32,7 +35,7 @@ class Position:
 
         # Собираем все уникальные категории
         all_categories = set()
-        for u in users_collection.find():
+        for u in Position.users_collection.find():
             all_categories.update(u.get('like_categories', []))
             all_categories.update(u.get('dislike_categories', []))
         all_categories = list(all_categories)
@@ -40,7 +43,7 @@ class Position:
         def user_to_vector(user, categories):
             return [
                 1 if cat in user.get('like_categories', []) else
-            -1 if cat in user.get('dislike_categories', []) else
+                -1 if cat in user.get('dislike_categories', []) else
                 0
                 for cat in categories
             ]
@@ -57,24 +60,27 @@ class Position:
 
         # Для каждого другого пользователя считаем похожесть
         position_scores = dict()
-        for other in users_collection.find({"id": {"$ne": user_id}}):
+        for other in Position.users_collection.find({"id": {"$ne": user_id}}):
             sim = cosine_similarity(target_vec, user_to_vector(other, all_categories))
             if sim <= 0:
                 continue  # не учитываем совсем непохожих
 
             # Для всех позиций, которые нравятся этому пользователю
             liked_cats = set(other.get('like_categories', []))
-            for pos in positions_collection.find({"tag": {"$in": list(liked_cats)}, "id": {"$nin": list(viewed_ids)}}):
+            for pos in Position.positions_collection.find({"tag": {"$in": list(liked_cats)}, "id": {"$nin": list(viewed_ids)}}):
                 pid = pos['id']
                 position_scores[pid] = position_scores.get(pid, 0) + sim
 
         # Сортируем позиции по убыванию "рейтинга"
         top_ids = [pid for pid, _ in sorted(position_scores.items(), key=lambda x: x[1], reverse=True)][:limit]
 
-        recommended = list(positions_collection.find({"id": {"$in": top_ids}}))
+        recommended = list(Position.positions_collection.find({"id": {"$in": top_ids}}))
         for rec in recommended:
             rec.pop('_id', None)
         # Можно отсортировать вручную по top_ids, если порядок важен
         recommended.sort(key=lambda r: top_ids.index(r['id']))
         return recommended
 
+    def __str__(self):
+        # Добавь этот метод, чтобы тест str проходил!
+        return f"{getattr(self, 'id', '')}  {getattr(self, 'position_name', '')} {getattr(self, 'tag', '')}"

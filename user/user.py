@@ -1,11 +1,9 @@
 from pymongo import MongoClient
 
-client = MongoClient("mongodb://localhost:27017/")
-db = client["recommendation_system"]
-users_collection = db["users"]
-positions_collection = db["positions"]
-
 class User:
+    users_collection = None
+    positions_collection = None
+
     @staticmethod
     def add_user(user_dict):
         # Проверить обязательные поля кроме id
@@ -22,21 +20,21 @@ class User:
             user_dict["id"] = User.get_uniq_id()
         else:
             # Проверить уникальность
-            if users_collection.find_one({"id": user_dict["id"]}):
+            if User.users_collection.find_one({"id": user_dict["id"]}):
                 return {'error': 'Пользователь уже существует'}, 400
 
-        users_collection.insert_one(user_dict)
+        User.users_collection.insert_one(user_dict)
         return {'message': 'Пользователь создан', 'id': user_dict["id"]}, 201
     
     @staticmethod
     def get_uniq_id():
         """Ищет уникальный id (максимальный + 1)"""
-        last = users_collection.find_one(sort=[("id", -1)])
+        last = User.users_collection.find_one(sort=[("id", -1)])
         return (last["id"] + 1) if last else 1
 
     @staticmethod
     def get_user_by_id(user_id):
-        user = users_collection.find_one({"id": user_id})
+        user = User.users_collection.find_one({"id": user_id})
         if not user:
             raise ValueError(f"Пользователь с id {user_id} не найден")
         user.pop('_id', None)
@@ -45,14 +43,14 @@ class User:
     @staticmethod
     def add_like_to_user(user_id, position_id):
         # Найти позицию по id
-        pos = positions_collection.find_one({"id": position_id}) or \
-            positions_collection.find_one({"id": str(position_id)})
+        pos = User.positions_collection.find_one({"id": position_id}) or \
+            User.positions_collection.find_one({"id": str(position_id)})
         if not pos:
             raise ValueError("Позиция не найдена")
         tags = pos.get("tag", [])
 
         # Получить пользователя
-        user = users_collection.find_one({"id": user_id})
+        user = User.users_collection.find_one({"id": user_id})
         if not user:
             raise ValueError(f"Пользователь с id {user_id} не найден")
 
@@ -63,7 +61,7 @@ class User:
         to_add = [tag for tag in tags if tag not in like_categories and tag not in dislike_categories]
 
         if to_add:
-            users_collection.update_one(
+            User.users_collection.update_one(
                 {"id": user_id},
                 {"$addToSet": {"like_categories": {"$each": to_add}}}
             )
@@ -71,14 +69,14 @@ class User:
     @staticmethod
     def add_dislike_to_user(user_id, position_id):
         # Найти позицию по id (учитываем int и str)
-        pos = positions_collection.find_one({"id": position_id}) or \
-            positions_collection.find_one({"id": str(position_id)})
+        pos = User.positions_collection.find_one({"id": position_id}) or \
+            User.positions_collection.find_one({"id": str(position_id)})
         if not pos:
             raise ValueError("Позиция не найдена")
         categories = pos.get("categories", [])
 
         # Получить пользователя
-        user = users_collection.find_one({"id": user_id})
+        user = User.users_collection.find_one({"id": user_id})
         if not user:
             raise ValueError(f"Пользователь с id {user_id} не найден")
 
@@ -89,22 +87,21 @@ class User:
         to_add = [cat for cat in categories if cat not in like_categories and cat not in dislike_categories]
 
         if to_add:
-            users_collection.update_one(
+            User.users_collection.update_one(
                 {"id": user_id},
                 {"$addToSet": {"dislike_categories": {"$each": to_add}}}
             )
 
-
     @staticmethod
     def add_viewed_item(user_id, item_id):
         # Проверяем, что позиция существует
-        pos = positions_collection.find_one({"id": item_id}) or \
-            positions_collection.find_one({"id": str(item_id)})
+        pos = User.positions_collection.find_one({"id": item_id}) or \
+            User.positions_collection.find_one({"id": str(item_id)})
         if not pos:
             raise ValueError("Позиция не найдена")
 
         # Проверяем, что пользователь существует
-        user = users_collection.find_one({"id": user_id})
+        user = User.users_collection.find_one({"id": user_id})
         if not user:
             raise ValueError(f"Пользователь с id {user_id} не найден")
 
@@ -113,8 +110,14 @@ class User:
             raise ValueError(f"Позиция {item_id} уже была добавлена")
 
         # Добавляем item в просмотренные
-        users_collection.update_one(
+        User.users_collection.update_one(
             {"id": user_id},
             {"$addToSet": {"viewed": item_id}}
         )
 
+# Инициализация боевых коллекций (если не подменены тестами)
+if User.users_collection is None:
+    client = MongoClient("mongodb://localhost:27017/")
+    db = client["recommendation_system"]
+    User.users_collection = db["users"]
+    User.positions_collection = db["positions"]

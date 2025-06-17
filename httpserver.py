@@ -60,22 +60,6 @@ class UserHandler(BaseHTTPRequestHandler):
                 self._send_json(recommendations)
             return
 
-
-        # match = re.match(r'^/users/(\d+)/recommendations$', parsed.path)
-        # if match:
-        #     user_id = int(match.group(1))
-        #     user = self._find_user(user_id)
-        #     if not user:
-        #         self._send_json({'error': 'Пользователь не найден'}, status=404)
-        #         return
-        #     viewed_ids = user.get('viewed', [])
-        #     # Получаем первые 5 непосещённых позиций из MongoDB
-        #     recommended = list(positions_collection.find({"id": {"$nin": viewed_ids}}).limit(5))
-        #     for rec in recommended:
-        #         rec.pop('_id', None)
-        #     self._send_json(recommended)
-        #     return
-
         self._send_json({'error': 'Не найдено'}, status=404)
 
     def do_POST(self):
